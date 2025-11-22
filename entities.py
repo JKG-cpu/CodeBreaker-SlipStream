@@ -27,6 +27,19 @@ class Entity(pygame.sprite.Sprite):
             if self.direction.y > self.max_vel:
                 self.direction.y = self.max_vel
 
+        elif type == "Horizontal":
+            for sprite in self.collision_sprites:
+                if self.rect.colliderect(sprite.rect):
+                    if self.direction.x > 0:
+                        self.rect.right = sprite.rect.left
+                    
+                    elif self.direction.x < 0:
+                        self.rect.left = sprite.rect.right
+
+    def move(self, dt):
+        self.rect.centerx += self.direction.x * self.speed * dt
+        self.rect.centery += self.direction.y * dt
+
 class Player(Entity):
     def __init__(self, pos, collision_sprites: pygame.sprite.Group, group):
         super().__init__(pos, "red", group)
@@ -64,6 +77,8 @@ class Player(Entity):
         self.rect.centerx += self.direction.x * self.speed * dt
         self.handle_collisions("Horizontal")
 
+        self.on_ground = False
+
         self.rect.centery += self.direction.y * dt
         self.handle_collisions("Vertical")
 
@@ -91,7 +106,115 @@ class Player(Entity):
                     elif self.direction.x < 0:
                         self.rect.left = sprite.rect.right
 
+    def check_grounding(self):
+        self.rect.bottom += 1
+        
+        collisions = pygame.sprite.spritecollideany(self, self.collision_sprites)
+        
+        self.rect.bottom -= 1
+        
+        if collisions:
+            self.on_ground = True
+            self.double_jump = True
+        else:
+            self.on_ground = False
+
     def update(self, dt):
+        self.check_grounding()
+
         self.input()
         self.gravity(dt)
+        self.move(dt)
+
+class Enemy(Entity):
+    def __init__(self, pos, player: Player, collision_sprites: pygame.sprite.Group, group):
+        super().__init__(pos, "White", group)
+        self.collision_sprites = collision_sprites
+
+        self.player = player
+        self.radius = 200
+        self.speed = 200
+
+    def handle_collisions(self, type):
+        if type == "Vertical":
+            for sprite in self.collision_sprites:
+                if self.rect.colliderect(sprite.rect):
+                    if self.direction.y > 0:
+                        # Hitting the floor (setting position and zeroing velocity)
+                        self.rect.bottom = sprite.rect.top
+                        self.direction.y = 0
+                        self.on_ground = True # Essential for stopping gravity
+                    
+                    elif self.direction.y < 0:
+                        # Hitting the ceiling
+                        self.rect.top = sprite.rect.bottom
+                        self.direction.y = 0
+
+        elif type == "Horizontal":
+            for sprite in self.collision_sprites:
+                if self.rect.colliderect(sprite.rect):
+                    if self.direction.x > 0:
+                        # Hitting a wall on the right
+                        self.rect.right = sprite.rect.left
+                        self.direction.x = 0 # <-- Stops sticking
+                        
+                    elif self.direction.x < 0:
+                        # Hitting a wall on the left
+                        self.rect.left = sprite.rect.right
+                        self.direction.x = 0 # <-- Stops sticking
+
+    def check_grounding(self):
+        self.rect.bottom += 1
+        
+        is_grounded = pygame.sprite.spritecollideany(self, self.collision_sprites)
+        
+        self.rect.bottom -= 1
+        
+        if is_grounded:
+            self.on_ground = True
+        else:
+            self.on_ground = False
+
+    def in_range(self, player_center: tuple[int, int]) -> bool:
+        player_x, player_y = player_center
+        
+        dx = self.rect.centerx - player_x
+        dy = self.rect.centery - player_y
+        
+        distance_sq = (dx * dx) + (dy * dy)
+        
+        if distance_sq <= (self.radius * self.radius):
+            return True
+        return False
+
+    def follow(self, player_center: tuple[int, int]):
+        in_range = self.in_range(player_center) 
+        
+        if in_range:
+            player_x = player_center[0]
+            if player_x > self.rect.centerx:
+                self.direction.x = 1
+            
+            elif player_x < self.rect.centerx:
+                self.direction.x = -1
+            
+        else:
+            self.direction.x = 0
+    
+    def move(self, dt):
+        self.rect.centerx += self.direction.x * self.speed * dt
+        self.handle_collisions("Horizontal")
+
+        self.rect.centery += self.direction.y * dt
+        self.handle_collisions("Vertical")
+
+    def update(self, dt):
+        # Check on or off ground
+        self.check_grounding()
+
+        # Apply Gravity
+        self.gravity(dt)
+
+        # Move Enemy        
+        self.follow(self.player.rect.center)
         self.move(dt)

@@ -1,5 +1,5 @@
 from settings import *
-from entities import Entity, Player
+from entities import Entity, Player, Enemy
 from groups import AllSprites
 from sprites import Sprite
 
@@ -16,6 +16,7 @@ class Main:
 
         # Player
         self.player = Player((50, 50), self.collision_sprites, self.all_sprites)
+        self.enemy = Enemy((100, 150), self.player, self.collision_sprites, self.all_sprites)
 
         self.ground_surface = pygame.Surface((SCREEN_W, 50))
         self.ground = Sprite(self.ground_surface, (0, SCREEN_H - 50), (self.all_sprites, self.collision_sprites))
