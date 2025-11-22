@@ -6,8 +6,6 @@ from os import system, name
 
 # Variables
 SCREEN_W, SCREEN_H = 1400, 750
-GRAVITY = 2
-MAX_FALLING_SPEED = 10
 
 # Functions
 def cc():
