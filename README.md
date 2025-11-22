@@ -1,5 +1,6 @@
 # MilkyWay Hackathon Game
 
+### CodeBreaker - SlipStream
 A game created for the **MilkyWay Hackathon**!  
 Enjoy building, playing, and exploring the digital universe.
 
@@ -14,4 +15,5 @@ Enjoy building, playing, and exploring the digital universe.
 2. ***Run the main Python file***
     ```bash
     python main.py
+---
 ⚠️ This project is designed for Windows. It may not work correctly on Mac or Linux. Feedback is welcome!
