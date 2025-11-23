@@ -1,10 +1,13 @@
 from settings import *
 
 class Entity(pygame.sprite.Sprite):
-    def __init__(self, pos, color, group):
+    def __init__(self, pos, color, health, group):
         super().__init__(group)
 
         self.direction = vector()
+
+        self.max_health = health
+        self.current_health = self.max_health
 
         self.speed = 250
         self.jump_power = -500
@@ -19,6 +22,17 @@ class Entity(pygame.sprite.Sprite):
         self.image = pygame.Surface((50, 50))
         self.image.fill(color)
         self.rect = self.image.get_frect(center = pos)
+
+    def take_damage(self, amount: int) -> None:
+        self.current_health -= amount
+
+    def full_heal(self) -> None:
+        self.current_health = self.max_health
+
+    def heal(self, amount: int) -> None | bool:
+        if self.current_health == self.max_health:
+            return False
+        self.current_health = min(self.max_health, self.current_health + amount)
 
     def gravity(self, dt):
         if not self.on_ground:
@@ -42,10 +56,14 @@ class Entity(pygame.sprite.Sprite):
 
 class Player(Entity):
     def __init__(self, pos, collision_sprites: pygame.sprite.Group, group):
-        super().__init__(pos, "red", group)
+        super().__init__(pos, "red", 100, group)
         self.collision_sprites = collision_sprites
+        self.block = False
 
     def input(self):
+        if self.block:
+            return
+        
         keys = pygame.key.get_pressed()
 
         self.direction.x = 0
@@ -128,7 +146,7 @@ class Player(Entity):
 
 class Enemy(Entity):
     def __init__(self, pos, player: Player, collision_sprites: pygame.sprite.Group, group):
-        super().__init__(pos, "White", group)
+        super().__init__(pos, "White", 100, group)
         self.collision_sprites = collision_sprites
 
         self.player = player
