@@ -1,4 +1,4 @@
-from settings import *
+from .settings import *
 
 class Entity(pygame.sprite.Sprite):
     def __init__(self, pos, color, health, group):
@@ -19,8 +19,10 @@ class Entity(pygame.sprite.Sprite):
         self.is_jumping = False
         self.jump_pressed = False
         self.double_jump = True
+        self.freeze = False
 
         self.image = pygame.Surface((50, 50))
+        self.orig_color = color
         self.image.fill(color)
         self.rect = self.image.get_frect(center = pos)
 
@@ -36,6 +38,9 @@ class Entity(pygame.sprite.Sprite):
         self.current_health = min(self.max_health, self.current_health + amount)
 
     def gravity(self, dt):
+        if self.freeze:
+            return
+        
         if not self.on_ground:
             self.direction.y += self.gravity_amt * dt
 
@@ -56,24 +61,42 @@ class Entity(pygame.sprite.Sprite):
             self.current_health = 0
 
     def reset(self):
+        self.image.fill(self.orig_color)
+        self.freeze = False
         self.direction = vector()
         self.full_heal()
+
+    def death_effect(self):
+        self.direction = vector()
+        self.freeze = True
+        self.image.fill("green")
 
     def move(self, dt):
         self.rect.centerx += self.direction.x * self.speed * dt
         self.rect.centery += self.direction.y * dt
 
 class Player(Entity):
-    def __init__(self, pos, collision_sprites: pygame.sprite.Group, group):
+    def __init__(self, pos, collision_sprites: pygame.sprite.Group, enemies: pygame.sprite.Group, group: pygame.sprite.Group):
         super().__init__(pos, "red", 100, group)
         self.collision_sprites = collision_sprites
+        self.enemies = enemies
         self.block = False
+        self.sneak = False
 
     def input(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_c]:
+            self.sneak = True
+            self.direction.x = 0
+            self.speed = 100
+
+        else:
+            self.sneak = False
+            self.speed = 250
+
         if self.block:
             return
-        
-        keys = pygame.key.get_pressed()
 
         self.direction.x = 0
         if keys[pygame.K_LEFT]:
@@ -150,6 +173,11 @@ class Player(Entity):
         self.rect.center = point
         self.reset()
 
+    def check_enemy_collisions(self):
+        for sprite in self.enemies:
+            if self.rect.colliderect(sprite.rect):
+                self.current_health = 0
+
     def update(self, dt):
         self.check_grounding()
 
@@ -157,6 +185,7 @@ class Player(Entity):
         self.gravity(dt)
 
         self.check_death()
+        self.check_enemy_collisions()
 
         self.move(dt)
 
@@ -210,6 +239,9 @@ class Enemy(Entity):
             self.on_ground = False
 
     def in_range(self, player_center: tuple[int, int]) -> bool:
+        if self.player.sneak:
+            return
+        
         player_x, player_y = player_center
         
         dx = self.rect.centerx - player_x

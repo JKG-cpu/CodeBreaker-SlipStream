@@ -1,5 +1,5 @@
-from settings import *
-from entities import Player
+from .settings import *
+from .entities import Player
 
 class TransitionManager:
     def __init__(self, player: Player):
@@ -79,3 +79,28 @@ class TransitionManager:
         if self.active or self.alpha > 0:
             self.surface.set_alpha(self.alpha)
             screen.blit(self.surface, (0, 0))
+
+class FlashLight:
+    def __init__(self, player: Player):
+        self.player = player
+        self.screen = pygame.display.get_surface()
+
+        self.darkness_screen = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        self.darkness_screen.fill((0, 0, 0, 255))
+        self.flashlight_radius = 150
+
+    def update_darkness(self, offset: vector):
+        self.darkness_screen.fill((0, 0, 0, 255))
+        
+        screen_center_x, screen_center_y = self.player.rect.centerx + offset.x, self.player.rect.centery + offset.y
+        
+        pygame.draw.circle(
+            surface = self.darkness_screen,
+            color = (0, 0, 0, 150),
+            center = (screen_center_x, screen_center_y),
+            radius = self.flashlight_radius
+        )
+
+    def flashlight(self, offset: vector):
+        self.update_darkness(offset)
+        self.screen.blit(self.darkness_screen, (0, 0))

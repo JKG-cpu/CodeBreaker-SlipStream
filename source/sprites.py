@@ -1,4 +1,4 @@
-from settings import *
+from .settings import *
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, surf: pygame.Surface, pos: tuple[int, int], groups: pygame.sprite.Group):
