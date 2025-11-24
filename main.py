@@ -1,5 +1,6 @@
 from settings import *
 from effects import TransitionManager
+from gui import GUIHandler
 
 from entities import Player, Enemy
 from groups import AllSprites
@@ -22,11 +23,16 @@ class Main:
         self.collision_sprites = pygame.sprite.Group()
 
         # Player
+        self.player_respawn_point = (50, 50)
         self.player = Player((50, 50), self.collision_sprites, self.all_sprites)
-        self.player.current_health = 0
+        self.cam_target_rect = None
+        self.wait_for_respawn = False
 
         # Transition Manager
         self.transitions = TransitionManager(self.player)
+
+        # Gui
+        self.gui = GUIHandler()
 
         self.ground_surface = pygame.Surface((SCREEN_W, 50))
         self.ground = Sprite(self.ground_surface, (0, SCREEN_H - 50), (self.all_sprites, self.collision_sprites))
@@ -46,6 +52,9 @@ class Main:
                 
                 if event.key == pygame.K_SPACE and self.transitions.alpha == 255:
                     self.transitions.fade_out()
+                    self.player.respawn(self.player_respawn_point)
+                    self.gui.reset()
+                    self.wait_for_respawn = False
 
     def quit(self):
         pygame.quit()
@@ -65,17 +74,26 @@ class Main:
             self.handle_events(events)
 
             # Main Logic
-            self.all_sprites.draw(self.player.rect)
+            if self.wait_for_respawn:
+                self.all_sprites.draw(self.cam_target_rect)
+
+            else:
+                self.all_sprites.draw(self.player.rect)
+
             self.all_sprites.update(dt)
 
             # Handle Transitions
-            if self.player.current_health == 0:
-                print("Dead")
-                self.transitions.fade_in()
-                self.player.full_heal()
+            if self.player.current_health == 0 and not self.transitions.faded_in:
+                self.transitions.run_transition(type = "fade_in")
+                self.cam_target_rect = self.player.rect.copy()
+                self.wait_for_respawn = True
 
             self.transitions.update(dt)
             self.transitions.draw(self.screen)
+
+            # Main GUI
+            if self.wait_for_respawn:
+                self.gui.respawn_text(dt)
 
             # Update Display
             pygame.display.update()

@@ -8,6 +8,7 @@ class Entity(pygame.sprite.Sprite):
 
         self.max_health = health
         self.current_health = self.max_health
+        self.death_zone = SCREEN_H + 200
 
         self.speed = 250
         self.jump_power = -500
@@ -49,6 +50,14 @@ class Entity(pygame.sprite.Sprite):
                     
                     elif self.direction.x < 0:
                         self.rect.left = sprite.rect.right
+
+    def check_death(self):
+        if self.rect.y > self.death_zone:
+            self.current_health = 0
+
+    def reset(self):
+        self.direction = vector()
+        self.full_heal()
 
     def move(self, dt):
         self.rect.centerx += self.direction.x * self.speed * dt
@@ -137,11 +146,18 @@ class Player(Entity):
         else:
             self.on_ground = False
 
+    def respawn(self, point: tuple[int, int]):
+        self.rect.center = point
+        self.reset()
+
     def update(self, dt):
         self.check_grounding()
 
         self.input()
         self.gravity(dt)
+
+        self.check_death()
+
         self.move(dt)
 
 class Enemy(Entity):

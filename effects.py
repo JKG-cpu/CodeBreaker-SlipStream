@@ -5,6 +5,11 @@ class TransitionManager:
     def __init__(self, player: Player):
         self.player = player
 
+        self.transitions = {
+            "fade_in": lambda speed: self.fade_in(speed),
+            "fade_out": lambda speed: self.fade_out(speed)
+        }
+
         self.active = False
         self.mode = None
         self.surface = pygame.Surface((SCREEN_W, SCREEN_H))
@@ -13,19 +18,43 @@ class TransitionManager:
         # Fade Transition
         self.alpha = 0
         self.fade_speed = 5
+        self.faded_in = False
     
-    def fade_in(self, speed: int = 300) -> None:
+    # Run a Transition
+    def run_transition(self, type: str, args = None) -> None:
+        """
+        Transition Types
+
+        - fade_in
+        - fade_out
+        """
+        self.transitions[type](args)
+
+    # Transitions
+    def fade_in(self, speed: int = None) -> None:
         self.mode = "fade_in"
-        self.fade_speed = speed
+
+        if speed is None:
+            self.fade_speed = 300
+        else:
+            self.fade_speed = speed
+
         self.active = True
+        self.faded_in = True
         self.alpha = 0
 
-    def fade_out(self, speed: int = 300) -> None:
+    def fade_out(self, speed: int = None) -> None:
         self.mode = "fade_out"
-        self.fade_speed = speed
+
+        if speed is None:
+            self.fade_speed = 300
+        else:
+            self.fade_speed = speed
+
         self.active = True
         self.alpha = 255
     
+    # Update & Draw Transitions
     def update(self, dt) -> None:
         if not self.active:
             return
@@ -43,6 +72,7 @@ class TransitionManager:
             if self.alpha <= 0:
                 self.alpha = 0
                 self.active = False
+                self.faded_in = False
                 self.player.block = False
     
     def draw(self, screen: pygame.Surface):
