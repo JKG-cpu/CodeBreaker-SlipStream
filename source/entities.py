@@ -57,8 +57,7 @@ class Entity(pygame.sprite.Sprite):
                         self.rect.left = sprite.rect.right
 
     def check_death(self):
-        if self.rect.y > self.death_zone:
-            self.current_health = 0
+        pass
 
     def reset(self):
         self.image.fill(self.orig_color)

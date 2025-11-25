@@ -47,3 +47,6 @@ class AllSprites(pygame.sprite.Group):
         for sprite in self:
             pos = sprite.rect.topleft + self.offset
             self.screen.blit(sprite.image, pos)
+
+class DeathZones(pygame.sprite.Group):
+    pass

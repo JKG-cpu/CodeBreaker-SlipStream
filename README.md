@@ -17,3 +17,6 @@ Enjoy building, playing, and exploring the digital universe.
     python main.py
 ---
 ⚠️ This project is designed for Windows. It may not work correctly on Mac or Linux. Feedback is welcome!
+
+## Credits
+Thank you Hugues Laborde for the <a href="https://hugues-laborde.itch.io/pixelartsidescroller5?download#google_vignette">Pixel art!</a>

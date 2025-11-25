@@ -2,6 +2,7 @@ import pygame
 
 from pygame.math import Vector2 as vector
 from pytmx.util_pygame import load_pygame
+from pytmx import TiledMap
 from sys import exit as close_game
 from os import system, name
 from os.path import join

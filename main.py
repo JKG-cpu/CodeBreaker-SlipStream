@@ -15,16 +15,15 @@ class Main:
         # Groups
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
+        self.death_zones = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
 
+        self.import_assests()
+        self.setup(self.tile_maps["Map 1"])
+
         # Player
-        self.player_respawn_point = (50, 50)
-        self.player = Player((50, 50), self.collision_sprites, self.enemies, self.all_sprites)
         self.cam_target_rect = None
         self.wait_for_respawn = False
-
-        # Test Enemy
-        self.enemy = Enemy((300, 100), self.player, self.collision_sprites, (self.all_sprites, self.enemies))
 
         # Effects
         self.transitions = TransitionManager(self.player)
@@ -33,11 +32,25 @@ class Main:
         # Gui
         self.gui = GUIHandler()
 
-        self.ground_surface = pygame.Surface((SCREEN_W, 50))
-        self.ground = Sprite(self.ground_surface, (0, SCREEN_H - 50), (self.all_sprites, self.collision_sprites))
+    def import_assests(self):
+        self.tile_maps = {
+            "Map 1": load_pygame(join("graphics", "maps", "tmx", "map1.tmx"))
+        }
 
-        self.top_surface = pygame.Surface((100, 50))
-        self.top = Sprite(self.top_surface, (50, SCREEN_H - 250), (self.all_sprites, self.collision_sprites))
+    def setup(self, tmx_map: TiledMap):
+        for x, y, surf in tmx_map.get_layer_by_name("Floor 1").tiles():
+            Sprite(surf, (x * TILE_SIZE, y * TILE_SIZE), (self.all_sprites, self.collision_sprites))
+
+        for obj in tmx_map.get_layer_by_name("Spawns"):
+            if obj.name == "Player":
+                self.player_respawn_point = (obj.x, obj.y)
+                self.respawn_point = (obj.x, obj.y)
+                self.player = Player(
+                    pos = (obj.x, obj.y),
+                    collision_sprites = self.collision_sprites,
+                    enemies = self.enemies,
+                    group = self.all_sprites
+                )
 
     def handle_events(self, events):
         for event in events:
