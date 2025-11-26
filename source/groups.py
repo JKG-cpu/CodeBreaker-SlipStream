@@ -7,36 +7,29 @@ class AllSprites(pygame.sprite.Group):
 
         self.offset = vector()
         self.target_offset = vector()
-
-        # Deadzone in the center of the screen
-        self.deadzone = pygame.Rect(
-            SCREEN_W//2 - 80,
-            SCREEN_H//2 - 50,
-            200,
-            150
-        )
-
+        self.deadzone = pygame.Rect(0, 0, 200, 150)
+        
         self.smoothness = 0.05
 
     def update_camera(self, player_rect):
-        player_screen_x = player_rect.centerx + self.offset.x
-        player_screen_y = player_rect.centery + self.offset.y
+        # --- Deadzone Logic (World Space) ---
+        # Instead of moving the camera immediately, move the deadzone box if the player pushes against its edges.
 
-        # --- Deadzone logic ---
-        if player_screen_x < self.deadzone.left:
-            self.deadzone.left = player_screen_x
-        if player_screen_x > self.deadzone.right:
-            self.deadzone.right = player_screen_x
-        if player_screen_y < self.deadzone.top:
-            self.deadzone.top = player_screen_y
-        if player_screen_y > self.deadzone.bottom:
-            self.deadzone.bottom = player_screen_y
+        if player_rect.right > self.deadzone.right:
+            self.deadzone.right = player_rect.right
+        
+        if player_rect.left < self.deadzone.left:
+            self.deadzone.left = player_rect.left
+            
+        if player_rect.bottom > self.deadzone.bottom:
+            self.deadzone.bottom = player_rect.bottom
+            
+        if player_rect.top < self.deadzone.top:
+            self.deadzone.top = player_rect.top
 
-        # Camera target = move camera so deadzone comes back to center.
-        deadzone_center = vector(self.deadzone.centerx, self.deadzone.centery)
-
-        self.target_offset.x = -(deadzone_center.x - SCREEN_W / 2)
-        self.target_offset.y = -(deadzone_center.y - SCREEN_H / 2)
+        # --- Camera Scroll ---
+        self.target_offset.x = (SCREEN_W / 2) - self.deadzone.centerx
+        self.target_offset.y = (SCREEN_H / 2) - self.deadzone.centery
 
         # Smooth LERP
         self.offset += (self.target_offset - self.offset) * self.smoothness
@@ -47,6 +40,3 @@ class AllSprites(pygame.sprite.Group):
         for sprite in self:
             pos = sprite.rect.topleft + self.offset
             self.screen.blit(sprite.image, pos)
-
-class DeathZones(pygame.sprite.Group):
-    pass

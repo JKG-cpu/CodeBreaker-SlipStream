@@ -22,7 +22,7 @@ class Main:
         self.setup(self.tile_maps["Map 1"])
 
         # Player
-        self.cam_target_rect = None
+        self.cam_target_rect = self.player.rect.copy()
         self.wait_for_respawn = False
 
         # Effects
@@ -38,9 +38,15 @@ class Main:
         }
 
     def setup(self, tmx_map: TiledMap):
+        # --- Main Tiles ---
         for x, y, surf in tmx_map.get_layer_by_name("Floor 1").tiles():
             Sprite(surf, (x * TILE_SIZE, y * TILE_SIZE), (self.all_sprites, self.collision_sprites))
 
+        # --- Death Zones ---
+        for obj in tmx_map.get_layer_by_name("Death Zones"):
+            DeathZone((obj.width, obj.height), (obj.x, obj.y), self.death_zones)
+
+        # --- Player ---
         for obj in tmx_map.get_layer_by_name("Spawns"):
             if obj.name == "Player":
                 self.player_respawn_point = (obj.x, obj.y)
@@ -49,6 +55,7 @@ class Main:
                     pos = (obj.x, obj.y),
                     collision_sprites = self.collision_sprites,
                     enemies = self.enemies,
+                    death_zones = self.death_zones,
                     group = self.all_sprites
                 )
 

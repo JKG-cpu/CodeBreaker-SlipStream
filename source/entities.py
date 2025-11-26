@@ -1,14 +1,14 @@
 from .settings import *
 
 class Entity(pygame.sprite.Sprite):
-    def __init__(self, pos, color, health, group):
+    def __init__(self, pos, color, health, death_zones, group):
         super().__init__(group)
+        self.death_zones = death_zones
 
         self.direction = vector()
 
         self.max_health = health
         self.current_health = self.max_health
-        self.death_zone = SCREEN_H + 200
 
         self.speed = 250
         self.jump_power = -500
@@ -57,7 +57,9 @@ class Entity(pygame.sprite.Sprite):
                         self.rect.left = sprite.rect.right
 
     def check_death(self):
-        pass
+        for sprite in self.death_zones:
+            if self.rect.colliderect(sprite.rect):
+                self.current_health = 0
 
     def reset(self):
         self.image.fill(self.orig_color)
@@ -75,8 +77,8 @@ class Entity(pygame.sprite.Sprite):
         self.rect.centery += self.direction.y * dt
 
 class Player(Entity):
-    def __init__(self, pos, collision_sprites: pygame.sprite.Group, enemies: pygame.sprite.Group, group: pygame.sprite.Group):
-        super().__init__(pos, "red", 100, group)
+    def __init__(self, pos, collision_sprites: pygame.sprite.Group, enemies: pygame.sprite.Group, death_zones: pygame.sprite.Group, group: pygame.sprite.Group):
+        super().__init__(pos, "red", 100, death_zones, group)
         self.collision_sprites = collision_sprites
         self.enemies = enemies
         self.block = False
