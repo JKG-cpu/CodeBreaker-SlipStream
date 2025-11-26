@@ -39,8 +39,20 @@ class Main:
 
     def setup(self, tmx_map: TiledMap):
         # --- Main Tiles ---
-        for x, y, surf in tmx_map.get_layer_by_name("Floor 1").tiles():
-            Sprite(surf, (x * TILE_SIZE, y * TILE_SIZE), (self.all_sprites, self.collision_sprites))
+        floor_layer = tmx_map.get_layer_by_name("Floor 1")
+        for x, y, gid in floor_layer.iter_data():
+            if not gid:
+                continue
+
+            surf = tmx_map.get_tile_image_by_gid(gid)
+            tile_propetries = tmx_map.get_tile_properties_by_gid(gid)
+            # print(tile_propetries)
+
+            Sprite(surf, (x * TILE_SIZE, y * TILE_SIZE), self.all_sprites)
+
+            if tile_propetries.get("Hitbox"):
+                for obj in tile_propetries.get("colliders"):
+                    print(obj)
 
         # --- Death Zones ---
         for obj in tmx_map.get_layer_by_name("Death Zones"):
@@ -50,7 +62,6 @@ class Main:
         for obj in tmx_map.get_layer_by_name("Spawns"):
             if obj.name == "Player":
                 self.player_respawn_point = (obj.x, obj.y)
-                self.respawn_point = (obj.x, obj.y)
                 self.player = Player(
                     pos = (obj.x, obj.y),
                     collision_sprites = self.collision_sprites,
@@ -77,7 +88,7 @@ class Main:
 
     def quit(self):
         pygame.quit()
-        cc()
+        # cc()
         close_game()
 
     def play(self) -> None:

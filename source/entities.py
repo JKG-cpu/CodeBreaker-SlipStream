@@ -68,9 +68,8 @@ class Entity(pygame.sprite.Sprite):
         self.full_heal()
 
     def death_effect(self):
-        self.direction = vector()
+        self.direction = vector(0, self.direction.y)
         self.freeze = True
-        self.image.fill("green")
 
     def move(self, dt):
         self.rect.centerx += self.direction.x * self.speed * dt
@@ -178,6 +177,10 @@ class Player(Entity):
         for sprite in self.enemies:
             if self.rect.colliderect(sprite.rect):
                 self.current_health = 0
+
+    def death_effect(self):
+        super().death_effect()
+        self.block = True
 
     def update(self, dt):
         self.check_grounding()
