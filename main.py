@@ -19,7 +19,7 @@ class Main:
         self.enemies = pygame.sprite.Group()
 
         self.import_assests()
-        self.setup(self.tile_maps["Map 1"])
+        self.setup(self.tile_maps["Tutorial"])
 
         # Player
         self.cam_target_rect = self.player.rect.copy()
@@ -34,8 +34,15 @@ class Main:
 
     def import_assests(self):
         self.tile_maps = {
-            "Map 1": load_pygame(join("graphics", "maps", "tmx", "map1.tmx"))
+            "Tutorial": load_pygame(join("graphics", "maps", "tmx", "map1.tmx"))
         }
+
+        self.frames = {
+            "Player": import_character("graphics", "images", "Player")
+        }
+
+        self.background1 = scale_image(2, "graphics", "images", "Enviro", "BG01.png")
+        self.background2 = scale_image(2, "graphics", "images", "Enviro", "BG02.png")
 
     def setup(self, tmx_map: TiledMap):
         # --- Main Tiles ---
@@ -46,13 +53,39 @@ class Main:
 
             surf = tmx_map.get_tile_image_by_gid(gid)
             tile_propetries = tmx_map.get_tile_properties_by_gid(gid)
-            # print(tile_propetries)
-
-            Sprite(surf, (x * TILE_SIZE, y * TILE_SIZE), self.all_sprites)
 
             if tile_propetries.get("Hitbox"):
-                for obj in tile_propetries.get("colliders"):
-                    print(obj)
+                for obj in tile_propetries.get("colliders", []):
+                    world_x = x * TILE_SIZE
+                    world_y = y * TILE_SIZE
+
+                    if obj.width and obj.height:
+                        rect = pygame.Rect(
+                            world_x + obj.x,
+                            world_y + obj.y,
+                            obj.width,
+                            obj.height
+                        )
+                        Sprite(surf, (rect.x, rect.y), self.all_sprites)
+                        ColliderRect(rect, self.collision_sprites)
+
+                    elif hasattr(obj, "points"):
+                        world_points = [
+                            (world_x + px, world_y + py)
+                            for px, py in obj.points
+                        ]
+                        Sprite(surf, (obj.x, obj.y), self.all_sprites)
+                        ColliderPolygon(world_points, self.collision_sprites)
+                    
+                    else:
+                        print("Unknown collider type: ", obj)
+            
+            else:
+                Sprite(
+                    surf = surf,
+                    pos = (x * TILE_SIZE, y * TILE_SIZE),
+                    groups = (self.all_sprites, self.collision_sprites)
+                )
 
         # --- Death Zones ---
         for obj in tmx_map.get_layer_by_name("Death Zones"):
@@ -63,6 +96,7 @@ class Main:
             if obj.name == "Player":
                 self.player_respawn_point = (obj.x, obj.y)
                 self.player = Player(
+                    frames = self.frames["Player"],
                     pos = (obj.x, obj.y),
                     collision_sprites = self.collision_sprites,
                     enemies = self.enemies,
@@ -88,13 +122,15 @@ class Main:
 
     def quit(self):
         pygame.quit()
-        # cc()
+        cc()
         close_game()
 
     def play(self) -> None:
         while True:
-            # Fill Screen
+            # Fill Screen / Load in Background
             self.screen.fill("Black")
+            self.screen.blit(self.background2, (0, 0))
+            self.screen.blit(self.background1, (0, 0))
 
             # DT
             dt = self.clock.tick() / 1000

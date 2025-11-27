@@ -4,4 +4,4 @@ from .gui import GUIHandler
 
 from .entities import Player, Enemy, Entity
 from .groups import AllSprites
-from .sprites import Sprite, DeathZone
+from .sprites import Sprite, DeathZone, ColliderPolygon, ColliderRect

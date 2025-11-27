@@ -1,7 +1,7 @@
 from .settings import *
 
 class Entity(pygame.sprite.Sprite):
-    def __init__(self, pos, color, health, death_zones, group):
+    def __init__(self, frames, pos, health, death_zones, group):
         super().__init__(group)
         self.death_zones = death_zones
 
@@ -21,10 +21,16 @@ class Entity(pygame.sprite.Sprite):
         self.double_jump = True
         self.freeze = False
 
-        self.image = pygame.Surface((50, 50))
-        self.orig_color = color
-        self.image.fill(color)
+        self.frames = frames
+        self.frame_index = 0
+        self.animation_speed = 250
+
+        # Need to fix collision => Big sides on image
+        self.image = self.frames[self._get_state()][self.frame_index]
         self.rect = self.image.get_frect(center = pos)
+
+    def _get_state(self):
+        return "Idle"
 
     def take_damage(self, amount: int) -> None:
         self.current_health -= amount
@@ -62,7 +68,6 @@ class Entity(pygame.sprite.Sprite):
                 self.current_health = 0
 
     def reset(self):
-        self.image.fill(self.orig_color)
         self.freeze = False
         self.direction = vector()
         self.full_heal()
@@ -76,8 +81,8 @@ class Entity(pygame.sprite.Sprite):
         self.rect.centery += self.direction.y * dt
 
 class Player(Entity):
-    def __init__(self, pos, collision_sprites: pygame.sprite.Group, enemies: pygame.sprite.Group, death_zones: pygame.sprite.Group, group: pygame.sprite.Group):
-        super().__init__(pos, "red", 100, death_zones, group)
+    def __init__(self, frames, pos, collision_sprites: pygame.sprite.Group, enemies: pygame.sprite.Group, death_zones: pygame.sprite.Group, group: pygame.sprite.Group):
+        super().__init__(frames, pos, 100, death_zones, group)
         self.collision_sprites = collision_sprites
         self.enemies = enemies
         self.block = False
@@ -194,8 +199,8 @@ class Player(Entity):
         self.move(dt)
 
 class Enemy(Entity):
-    def __init__(self, pos, player: Player, collision_sprites: pygame.sprite.Group, group):
-        super().__init__(pos, "White", 100, group)
+    def __init__(self, frames, pos, player: Player, collision_sprites: pygame.sprite.Group, group):
+        super().__init__(frames, pos, 100, [], group)
         self.collision_sprites = collision_sprites
 
         self.player = player
