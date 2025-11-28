@@ -23,15 +23,61 @@ class Entity(pygame.sprite.Sprite):
 
         self.frames = frames
         self.frame_index = 0
-        self.animation_speed = 250
+
+        self.animation_speeds = {
+            "Idle": 5,
+            "Run": 10
+        }
+
+        self.animation_speed = self.animation_speeds.get(self._get_state(), 5)
+        self.flip = False
+        self.prev_state = "Idle"
 
         # Need to fix collision => Big sides on image
         self.image = self.frames[self._get_state()][self.frame_index]
         self.rect = self.image.get_frect(center = pos)
 
+    # Animation
     def _get_state(self):
+        # Jumping
+        if self.is_jumping:
+            return "Jump"
+
+        # Running
+        if self.direction.x != 0:
+            if self.direction.x < 0:
+                self.flip = True
+            
+            if self.direction.x > 0:
+                self.flip = False
+
+            return "Run"
+
         return "Idle"
 
+    def animate(self, dt):
+        state = self._get_state()
+
+        if state != self.prev_state:
+            self.frame_index = 0
+
+        self.animation_speed = self.animation_speeds.get(state, 5)
+        self.frame_index += self.animation_speed * dt
+
+        frames = self.frames[state]
+
+        if state == "Jump":
+            if self.frame_index >= len(frames) - 1:
+                self.frame_index = len(frames) - 1
+
+        self.image = frames[int(self.frame_index) % len(frames)]
+
+        if self.flip:
+            self.image = pygame.transform.flip(self.image, True, False)
+
+        self.prev_state = state
+
+    # Logic
     def take_damage(self, amount: int) -> None:
         self.current_health -= amount
 
@@ -197,6 +243,7 @@ class Player(Entity):
         self.check_enemy_collisions()
 
         self.move(dt)
+        self.animate(dt)
 
 class Enemy(Entity):
     def __init__(self, frames, pos, player: Player, collision_sprites: pygame.sprite.Group, group):
