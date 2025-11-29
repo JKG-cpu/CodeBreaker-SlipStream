@@ -4,16 +4,22 @@ class GUIHandler:
     def __init__(self):
         self.fonts = {}
         self.title_font = pygame.font.Font(join("graphics", "fonts", "Goldman-Bold.ttf"), 75)
+        self.font = pygame.font.Font(join("graphics", "fonts", "Goldman-Bold.ttf"), 25)
 
         self.screen = pygame.display.get_surface()
 
         # Respawn
         self.respawn_alpha = 0
         self.respawn_alpha_inc = 150
-    
+
+        # Texts
+        self.texts = []
+
+    # Reset Everything
     def reset(self):
         self.respawn_alpha = 0
 
+    # Respawn
     def respawn_text(self, dt):
         self.respawn_alpha += self.respawn_alpha_inc * dt
 
@@ -27,3 +33,14 @@ class GUIHandler:
 
         self.screen.blit(text, rect)
         self.screen.blit(top_text, top_rect)
+
+    # Help Text
+    def new_text(self, pos: tuple[int, int], text: str):
+        help_text = self.font.render(text, True, "White")
+        help_text_rect = help_text.get_frect(center = pos)
+
+        self.texts.append((help_text, help_text_rect))
+    
+    def display_texts(self, offset: vector):
+        for text, rect in self.texts:
+            self.screen.blit(text, rect.topleft + offset)

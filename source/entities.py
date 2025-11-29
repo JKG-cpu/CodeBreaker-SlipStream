@@ -26,31 +26,32 @@ class Entity(pygame.sprite.Sprite):
 
         self.animation_speeds = {
             "Idle": 5,
-            "Run": 10
+            "Run": 10,
+            "Jump": 14
         }
 
         self.animation_speed = self.animation_speeds.get(self._get_state(), 5)
         self.flip = False
         self.prev_state = "Idle"
 
-        # Need to fix collision => Big sides on image
         self.image = self.frames[self._get_state()][self.frame_index]
         self.rect = self.image.get_frect(center = pos)
+        self.rect = self.rect.inflate(-20, 0)
 
     # Animation
     def _get_state(self):
+        if self.direction.x < 0:
+            self.flip = True
+        
+        if self.direction.x > 0:
+            self.flip = False
+
         # Jumping
         if self.is_jumping:
             return "Jump"
 
         # Running
         if self.direction.x != 0:
-            if self.direction.x < 0:
-                self.flip = True
-            
-            if self.direction.x > 0:
-                self.flip = False
-
             return "Run"
 
         return "Idle"

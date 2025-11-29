@@ -12,6 +12,9 @@ class Main:
         # Framerate
         self.clock = pygame.time.Clock()
 
+        # Gui
+        self.gui = GUIHandler()
+
         # Groups
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
@@ -28,9 +31,6 @@ class Main:
         # Effects
         self.transitions = TransitionManager(self.player)
         self.flashlight = FlashLight(self.player)
-
-        # Gui
-        self.gui = GUIHandler()
 
     def import_assests(self):
         self.tile_maps = {
@@ -104,6 +104,10 @@ class Main:
                     group = self.all_sprites
                 )
 
+        # --- Text ---
+        for obj in tmx_map.get_layer_by_name("GUI"):
+            self.gui.new_text((obj.x, obj.y), obj.Text)
+
     def handle_events(self, events):
         for event in events:
             # Quitting
@@ -147,6 +151,9 @@ class Main:
                 self.all_sprites.draw(self.player.rect)
 
             self.all_sprites.update(dt)
+
+            # Text Display
+            self.gui.display_texts(self.all_sprites.offset)
 
             # Handle Transitions
             if self.player.current_health == 0 and not self.transitions.faded_in:
