@@ -38,7 +38,8 @@ class Main:
         }
 
         self.frames = {
-            "Player": import_character("graphics", "images", "Player")
+            "Player": import_character("graphics", "images", "Player"),
+            "Enemy": import_character("graphics", "images", "Enemy")
         }
 
         self.background1 = scale_image(2, "graphics", "images", "Enviro", "BG01.png")
@@ -91,7 +92,7 @@ class Main:
         for obj in tmx_map.get_layer_by_name("Death Zones"):
             DeathZone((obj.width, obj.height), (obj.x, obj.y), self.death_zones)
 
-        # --- Player ---
+        # --- Player, Enemies, Roaming Points ---
         for obj in tmx_map.get_layer_by_name("Spawns"):
             if obj.name == "Player":
                 self.player_respawn_point = (obj.x, obj.y)
@@ -101,6 +102,27 @@ class Main:
                     collision_sprites = self.collision_sprites,
                     enemies = self.enemies,
                     death_zones = self.death_zones,
+                    group = self.all_sprites
+                )
+
+            elif obj.type == "Enemy":
+                roaming_points = (
+                    (
+                        tmx_map.get_object_by_id(obj.properties["Point A"]).x, 
+                        tmx_map.get_object_by_id(obj.properties["Point A"]).y
+                    ), 
+                    (
+                        tmx_map.get_object_by_id(obj.properties["Point B"]).x, 
+                        tmx_map.get_object_by_id(obj.properties["Point B"]).y
+                    )
+                )
+                enemy = Enemy(
+                    frames = self.frames["Enemy"],
+                    pos = (obj.x, obj.y),
+                    player = self.player,
+                    roaming_points = roaming_points,
+                    death_zones = self.death_zones,
+                    collision_sprites = self.collision_sprites,
                     group = self.all_sprites
                 )
 

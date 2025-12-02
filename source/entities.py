@@ -127,6 +127,19 @@ class Entity(pygame.sprite.Sprite):
         self.rect.centerx += self.direction.x * self.speed * dt
         self.rect.centery += self.direction.y * dt
 
+    def check_grounding(self):
+        self.rect.bottom += 1
+        
+        collisions = pygame.sprite.spritecollideany(self, self.collision_sprites)
+        
+        self.rect.bottom -= 1
+        
+        if collisions:
+            self.on_ground = True
+            self.double_jump = True
+        else:
+            self.on_ground = False
+
 class Player(Entity):
     def __init__(self, frames, pos, collision_sprites: pygame.sprite.Group, enemies: pygame.sprite.Group, death_zones: pygame.sprite.Group, group: pygame.sprite.Group):
         super().__init__(frames, pos, 100, death_zones, group)
@@ -247,13 +260,16 @@ class Player(Entity):
         self.animate(dt)
 
 class Enemy(Entity):
-    def __init__(self, frames, pos, player: Player, collision_sprites: pygame.sprite.Group, group):
-        super().__init__(frames, pos, 100, [], group)
-        self.collision_sprites = collision_sprites
-
+    def __init__(self, frames: dict, pos: tuple[int, int], player: Player, roaming_points: list[object, object], collision_sprites: pygame.sprite.Group, death_zones: pygame.sprite.Group, group: pygame.sprite.Group | list[pygame.sprite.Group]) -> None:
+        super().__init__(frames, pos, 100, death_zones, group)
         self.player = player
+        self.collision_sprites = collision_sprites
+        self.roaming_points = roaming_points
+
         self.radius = 200
         self.speed = 200
+        self.seen_player = False
+        self.point_a_reached = False
 
     def handle_collisions(self, type):
         if type == "Vertical":
@@ -283,61 +299,70 @@ class Enemy(Entity):
                         self.rect.left = sprite.rect.right
                         self.direction.x = 0 # <-- Stops sticking
 
-    def check_grounding(self):
-        self.rect.bottom += 1
-        
-        is_grounded = pygame.sprite.spritecollideany(self, self.collision_sprites)
-        
-        self.rect.bottom -= 1
-        
-        if is_grounded:
-            self.on_ground = True
-        else:
-            self.on_ground = False
-
-    def in_range(self, player_center: tuple[int, int]) -> bool:
+    def in_range(self, player_center: tuple[int, int]) -> bool | None:
         if self.player.sneak:
             return
         
         player_x, player_y = player_center
-        
+
         dx = self.rect.centerx - player_x
         dy = self.rect.centery - player_y
-        
+
         distance_sq = (dx * dx) + (dy * dy)
-        
+    
         if distance_sq <= (self.radius * self.radius):
             return True
+        
         return False
 
     def follow(self, player_center: tuple[int, int]):
-        in_range = self.in_range(player_center) 
-        
+        in_range = self.in_range(player_center)
+
         if in_range:
             player_x = player_center[0]
             if player_x > self.rect.centerx:
                 self.direction.x = 1
-            
+        
             elif player_x < self.rect.centerx:
                 self.direction.x = -1
-            
+        
         else:
             self.direction.x = 0
-    
+
+    def roam(self):
+        # Rotate to point A
+        if not self.point_a_reached:
+            self.direction.x = -1
+            if self.roaming_points[0][0] >= self.rect.x:
+                self.point_a_reached = True
+
+        # Rotate to point B
+        else:
+            self.direction.x = 1
+            if self.roaming_points[1][0] <= self.rect.x:
+                self.point_a_reached = False
+
     def move(self, dt):
         self.rect.centerx += self.direction.x * self.speed * dt
         self.handle_collisions("Horizontal")
 
-        self.rect.centery += self.direction.y * dt
+        self.rect.centery += self.direction.y * self.speed * dt
         self.handle_collisions("Vertical")
 
     def update(self, dt):
-        # Check on or off ground
+        # Check if on ground
         self.check_grounding()
 
-        # Apply Gravity
+        # Gravity
         self.gravity(dt)
 
-        # Move Enemy        
+        # Follow Player
         self.follow(self.player.rect.center)
+        
+        # Rotate inbetween roaming points
+        if not self.seen_player:
+            # Roam
+            self.roam()
+
+        # Move Enemy
         self.move(dt)
